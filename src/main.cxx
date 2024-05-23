@@ -12,7 +12,7 @@ int main()
     auto const address = net::ip::make_address( "0.0.0.0" );
     auto const port    = static_cast<unsigned short>( 8080 );
 
-    net::io_context ioc { 6 };
+    net::io_context ioc { THREADS_COUNT };
 
     auto ls = std::make_shared<listener>( ioc, tcp::endpoint { address, port } );
     ls->get( "/hw", []( http::request<http::string_body>, http::response<http::string_body> &response )

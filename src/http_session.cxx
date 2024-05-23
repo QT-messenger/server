@@ -1,11 +1,13 @@
+#include <boost/beast/core/bind_handler.hpp>
+#include <boost/beast/core/error.hpp>
 #include <boost/beast/http/read.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/beast/http/verb.hpp>
+#include <boost/beast/http/write.hpp>
 #include <boost/core/ignore_unused.hpp>
 #include <http_session.hxx>
 #include <http_target.hxx>
 #include <algorithm>
-#include <iostream>
 
 namespace msserver
 {
@@ -22,8 +24,7 @@ namespace msserver
 
     void http_session::on_read() noexcept
     {
-        auto self = shared_from_this();
-
+        auto self          = shared_from_this();
         http::verb method  = req.method();
         std::string target = req.target().to_string();
 
@@ -36,15 +37,20 @@ namespace msserver
         {
             response = e404();
         }
+        else
+        {
+            targ->handler( req, response );
+        }
 
-        targ->handler( req, response );
+        beast::error_code ec;
+        auto bt = http::write( socket, response, ec );
+        on_write( ec, bt );
+    }
 
-        http::async_write( socket, response,
-                           [ self ]( beast::error_code ec, std::size_t bytes_transferred )
-                           {
-                               boost::ignore_unused( bytes_transferred );
-                               self->socket.shutdown( tcp::socket::shutdown_send, ec );
-                           } );
+    void http_session::on_write( beast::error_code ec, std::size_t bytes_transferred ) noexcept
+    {
+        boost::ignore_unused( bytes_transferred );
+        socket.shutdown( tcp::socket::shutdown_send, ec );
     }
 
     http::response<http::string_body> http_session::e404() const noexcept

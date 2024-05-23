@@ -45,6 +45,7 @@ namespace msserver
       private:
         void do_read() noexcept;
         void on_read() noexcept;
+        void on_write( beast::error_code ec, std::size_t bytes_transferred ) noexcept;
 
         http::response<http::string_body> e404() const noexcept;
     };
