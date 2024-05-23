@@ -1,15 +1,15 @@
+#pragma once
 #ifndef LISTENER_HXX
-#define LISTENER_HXX
-
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/strand.hpp>
-#include <boost/beast.hpp>
-#include <boost/beast/core/bind_handler.hpp>
-#include <memory>
-#include <vector>
-#include <http_target.hxx>
-#include <websocket_target.hxx>
-#include <def.hxx>
+#    define LISTENER_HXX
+#    include <memory>
+#    include <vector>
+#    include <boost/asio/io_context.hpp>
+#    include <boost/asio/strand.hpp>
+#    include <boost/beast.hpp>
+#    include <boost/beast/core/bind_handler.hpp>
+#    include <http_target.hxx>
+#    include <websocket_target.hxx>
+#    include <def.hxx>
 
 namespace msserver
 {

@@ -1,16 +1,16 @@
+#pragma once
 #ifndef WEBSOCKET_SESSION_HXX
-#define WEBSOCKET_SESSION_HXX
-
-#include <boost/asio/dispatch.hpp>
-#include <boost/beast/core/bind_handler.hpp>
-#include <boost/beast/core/error.hpp>
-#include <boost/beast/core/flat_buffer.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/beast/http/message.hpp>
-#include <boost/beast/websocket/stream.hpp>
-#include <def.hxx>
-#include <websocket_target.hxx>
-#include <memory>
+#    define WEBSOCKET_SESSION_HXX
+#    include <memory>
+#    include <boost/asio/dispatch.hpp>
+#    include <boost/beast/core/bind_handler.hpp>
+#    include <boost/beast/core/error.hpp>
+#    include <boost/beast/core/flat_buffer.hpp>
+#    include <boost/asio/ip/tcp.hpp>
+#    include <boost/beast/http/message.hpp>
+#    include <boost/beast/websocket/stream.hpp>
+#    include <websocket_target.hxx>
+#    include <def.hxx>
 
 namespace msserver
 {

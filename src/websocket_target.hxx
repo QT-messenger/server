@@ -1,8 +1,8 @@
+#pragma once
 #ifndef WEBSOCKET_TARGET_HXX
-#define WEBSOCKET_TARGET_HXX
-
-#include <def.hxx>
-#include <string>
+#    define WEBSOCKET_TARGET_HXX
+#    include <string>
+#    include <def.hxx>
 
 namespace msserver
 {

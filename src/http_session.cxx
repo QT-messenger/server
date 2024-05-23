@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <boost/beast/core/bind_handler.hpp>
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/http/read.hpp>
@@ -7,7 +8,6 @@
 #include <boost/core/ignore_unused.hpp>
 #include <http_session.hxx>
 #include <http_target.hxx>
-#include <algorithm>
 
 namespace msserver
 {

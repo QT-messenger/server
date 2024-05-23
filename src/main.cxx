@@ -7,17 +7,12 @@
 #include <listener.hxx>
 #include <def.hxx>
 
+using namespace msserver;
+
 int main()
 {
-    namespace net = boost::asio;
-    using namespace msserver;
-
-    auto const address = net::ip::make_address( "0.0.0.0" );
-    auto const port    = 8080ui16;
-
-    net::io_context ioc { THREADS_COUNT };
-
-    auto ls = std::make_shared<listener>( ioc, tcp::endpoint { address, port } );
+    net::io_context ioc( THREADS_COUNT );
+    auto ls = std::make_shared<listener>( ioc, tcp::endpoint( boost::asio::ip::make_address( HTTP_TARGET_HOST ), HTTP_TARGET_PORT ) );
     ls->get( "/hw", []( http::request<http::string_body>, http::response<http::string_body> &response )
              { response.body() = "Hello world!"; response.set(http::field::content_type, "text/plain"); } );
 
