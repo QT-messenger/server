@@ -86,5 +86,7 @@ namespace msserver
         {
             std::make_shared<http_session>( socket, http_targets )->run( req );
         }
+
+        do_accept();
     }
 } // namespace msserver

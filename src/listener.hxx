@@ -5,8 +5,6 @@
 #include <boost/asio/strand.hpp>
 #include <boost/beast.hpp>
 #include <boost/beast/core/bind_handler.hpp>
-#include <exception>
-#include <iostream>
 #include <memory>
 #include <vector>
 #include <http_target.hxx>
