@@ -80,7 +80,7 @@ namespace msserver
 
         if ( websocket::is_upgrade( req ) )
         {
-            std::make_shared<websocket_session>( socket, req.target().to_string(), websocket_targets )->run( req );
+            std::make_shared<websocket_session>( socket, req.target().data(), websocket_targets )->run( req );
         }
         else
         {

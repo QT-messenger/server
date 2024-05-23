@@ -9,7 +9,7 @@
             "stopAtEntry": false,
             "cwd": "${command:cmake.getLaunchTargetDirectory}",
             "environment": [],
-            "console": "integratedTerminal";
+            "console": "integratedTerminal"
         }
     ],
     "version": "2.0.0"

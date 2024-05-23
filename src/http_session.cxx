@@ -25,7 +25,7 @@ namespace msserver
         auto self = shared_from_this();
 
         http::verb method  = req.method();
-        std::string target = req.target().to_string();
+        std::string target = req.target().data();
 
         http::response<http::string_body> response;
 
