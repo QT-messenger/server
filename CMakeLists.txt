@@ -12,15 +12,14 @@ find_package(OpenSSL REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(src/)
 
-message(STATUS ${Boost_FOUND})
+add_executable(${PROJECT_NAME}
+src/main.cxx
+src/http_session.cxx
+src/listener.cxx
+src/websocket_session.cxx
 
-add_executable(ms-server
-    src/main.cxx
-    src/http_session.cxx
-    src/listener.cxx
-    src/websocket_session.cxx
-    
 )
+target_compile_definitions(${PROJECT_NAME} PUBLIC THREADS_COUNT=${SERVER_THREADS_COUNT})
 
-target_link_libraries(ms-server PRIVATE ${Boost_LIBRARIES})
-target_link_libraries(ms-server PRIVATE OpenSSL::SSL)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL)

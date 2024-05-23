@@ -29,7 +29,7 @@ namespace msserver
       public:
         listener( net::io_context &ioc, tcp::endpoint endpoint );
 
-        constexpr inline void get( const std::string ep, const http_request_handler &handler ) noexcept
+        constexpr inline void get( const std::string &ep, const http_request_handler &handler ) noexcept
         {
             http_targets.emplace_back( http::verb::get, ep, handler );
         }

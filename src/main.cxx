@@ -1,3 +1,6 @@
+#ifndef THREADS_COUNT
+#    error please, define SERVER_THREADS_COUNT variable
+#endif
 #include <boost/beast/http/field.hpp>
 #include <boost/beast/http/string_body.hpp>
 #include <boost/system/error_code.hpp>
@@ -10,7 +13,7 @@ int main()
     using namespace msserver;
 
     auto const address = net::ip::make_address( "0.0.0.0" );
-    auto const port    = static_cast<unsigned short>( 8080 );
+    auto const port    = 8080ui16;
 
     net::io_context ioc { THREADS_COUNT };
 

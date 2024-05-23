@@ -9,8 +9,6 @@
 namespace http  = boost::beast::http;
 namespace beast = boost::beast;
 
-constexpr const uint32_t THREADS_COUNT = 2;
-
 using http_request_handler      = std::function<void( const http::request<http::string_body> &request, http::response<http::string_body> &response )>;
 using websocket_request_handler = std::function<void( const std::string &request, std::string &response )>;
 

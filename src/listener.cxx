@@ -1,3 +1,4 @@
+#include <memory>
 #include <websocket_session.hxx>
 #include <boost/asio/buffer.hpp>
 #include <boost/asio/strand.hpp>
@@ -6,7 +7,6 @@
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/http/read.hpp>
 #include <listener.hxx>
-#include <memory>
 #include <http_session.hxx>
 
 namespace msserver
