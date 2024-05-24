@@ -46,13 +46,13 @@ namespace msserver
 
         inline void run() noexcept
         {
-            do_accept();
+            net::dispatch( acceptor.get_executor(), beast::bind_front_handler( &listener::do_accept, shared_from_this() ) );
         }
 
       private:
         void do_accept() noexcept;
         void on_accept( beast::error_code ec, tcp::socket socket ) noexcept;
-        void on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec );
+        void on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec, size_t bytes_transferred );
     };
 
 } // namespace msserver

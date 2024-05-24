@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <websocket_session.hxx>
 #include <boost/beast/core/bind_handler.hpp>
 #include <boost/beast/core/error.hpp>
 #include <boost/beast/http/read.hpp>
@@ -11,18 +12,38 @@
 
 namespace msserver
 {
-    void http_session::do_read() noexcept
+    void http_session::do_read()
     {
-        auto self = shared_from_this();
-        http::async_read( socket, buffer, req, [ self ]( beast::error_code ec, std::size_t bytes_transferred )
-                          {
-          boost::ignore_unused(bytes_transferred);
-          if (!ec) {
-            self->on_read();
-          } } );
+        parser.emplace();
+
+        parser->body_limit( 10000 );
+
+        stream.expires_after( std::chrono::seconds( 30 ) );
+
+        http::async_read(
+            stream, buffer, *parser,
+            beast::bind_front_handler( &http_session::on_read, shared_from_this() ) );
     }
 
-    void http_session::on_read() noexcept
+    void http_session::on_read( beast::error_code ec, std::size_t bytes_transferred ) noexcept
+    {
+        if ( ec == http::error::end_of_stream )
+        {
+            return do_close();
+        }
+
+        auto req = parser->get();
+
+        if ( websocket::is_upgrade( req ) )
+        {
+            std::make_shared<websocket_session>( stream.release_socket(), std::string( req.target() ), websocket_targets )->run( parser->release() );
+            return;
+        }
+
+        handle_request( req );
+    }
+
+    void http_session::handle_request( const http::request<http::string_body> &req )
     {
         auto self          = shared_from_this();
         http::verb method  = req.method();
@@ -30,10 +51,10 @@ namespace msserver
 
         http::response<http::string_body> response;
 
-        auto targ = std::find_if( targets.begin(), targets.end(), [ method, target ]( http_target t )
+        auto targ = std::find_if( http_targets.begin(), http_targets.end(), [ method, target ]( http_target t )
                                   { return t.method == method && t.endp == target; } );
 
-        if ( targ == targets.end() )
+        if ( targ == http_targets.end() )
         {
             response = e404();
         }
@@ -42,15 +63,14 @@ namespace msserver
             targ->handler( req, response );
         }
 
-        beast::error_code ec;
-        auto bt = http::write( socket, response, ec );
-        on_write( ec, bt );
+        http::write( stream, response );
+        do_close();
     }
 
-    void http_session::on_write( beast::error_code ec, std::size_t bytes_transferred ) noexcept
+    void http_session::do_close()
     {
-        boost::ignore_unused( bytes_transferred );
-        socket.shutdown( tcp::socket::shutdown_send, ec );
+        beast::error_code ec;
+        stream.socket().shutdown( tcp::socket::shutdown_send, ec );
     }
 
     http::response<http::string_body> http_session::e404() const noexcept

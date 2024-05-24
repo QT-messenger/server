@@ -5,6 +5,9 @@
 #    include <functional>
 #    include <iostream>
 
+#    define HTTP_TARGET_HOST "0.0.0.0"
+#    define HTTP_TARGET_PORT 8080
+
 namespace http  = boost::beast::http;
 namespace beast = boost::beast;
 
@@ -14,11 +17,6 @@ using websocket_request_handler = std::function<void( const std::string &request
 inline void fail( beast::error_code ec, const std::string &text ) noexcept
 {
     std::cerr << text << ": " << ec.message() << std::endl;
-}
-
-inline void fail( const std::string &e ) noexcept
-{
-    std::cerr << e << std::endl;
 }
 
 #endif

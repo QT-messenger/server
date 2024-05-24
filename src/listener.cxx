@@ -11,8 +11,7 @@
 
 namespace msserver
 {
-    namespace beast     = boost::beast;
-    namespace websocket = boost::beast::websocket;
+    namespace beast = boost::beast;
 
     listener::listener( net::io_context &ioc, tcp::endpoint endpoint ) :
         ioc( ioc ), acceptor( net::make_strand( ioc ) )
@@ -60,31 +59,23 @@ namespace msserver
             fail( ec, "Acception" );
             return;
         }
+        else
+        {
+            std::make_shared<http_session>( socket, http_targets, websocket_targets )->run();
+        }
 
-        auto self = shared_from_this();
-        beast::flat_buffer buffer;
-        http::request<http::string_body> req;
-
-        http::read( socket, buffer, req, ec );
-
-        on_read( socket, req, ec );
+        do_accept();
     }
 
-    void listener::on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec )
+    void listener::on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec, size_t bytes_transferred )
     {
         if ( ec )
         {
             fail( ec, "Read" );
-            return;
-        }
-
-        if ( websocket::is_upgrade( req ) )
-        {
-            std::make_shared<websocket_session>( socket, req.target().data(), websocket_targets )->run( req );
         }
         else
         {
-            std::make_shared<http_session>( socket, http_targets )->run( req );
+            std::make_shared<http_session>( socket, http_targets, websocket_targets )->run();
         }
 
         do_accept();
