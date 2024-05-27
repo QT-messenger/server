@@ -1,5 +1,6 @@
 #include <boost/asio/buffer.hpp>
 #include <boost/beast/core/bind_handler.hpp>
+#include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/core/error.hpp>
 #include <websocket_session.hxx>
 #include <websocket_target.hxx>
@@ -62,7 +63,7 @@ namespace msserver
 
         if ( target_ != targets.end() )
         {
-            auto result = target_->handler( net::buffer_cast<const char *>( buffer.data() ), response, state, shared_from_this() );
+            auto result = target_->handler( beast::buffers_to_string( buffer.data() ), response, state, shared_from_this() );
 
             if ( result.ws_error == websocket_error::ok )
             {
