@@ -14,7 +14,7 @@ namespace msserver
     namespace beast = boost::beast;
 
     listener::listener( net::io_context &ioc, tcp::endpoint endpoint ) :
-        ioc( ioc ), acceptor( net::make_strand( ioc ) )
+        ioc( ioc ), acceptor( net::make_strand( ioc ) ), state( std::make_shared<shared_state>() )
     {
         beast::error_code ec;
 
@@ -61,21 +61,7 @@ namespace msserver
         }
         else
         {
-            std::make_shared<http_session>( socket, http_targets, websocket_targets )->run();
-        }
-
-        do_accept();
-    }
-
-    void listener::on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec, size_t bytes_transferred )
-    {
-        if ( ec )
-        {
-            fail( ec, "Read" );
-        }
-        else
-        {
-            std::make_shared<http_session>( socket, http_targets, websocket_targets )->run();
+            std::make_shared<http_session>( socket, http_targets, websocket_targets, state )->run();
         }
 
         do_accept();

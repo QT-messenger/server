@@ -25,6 +25,7 @@ namespace msserver
         net::ip::tcp::acceptor acceptor;
         std::vector<http_target> http_targets;
         std::vector<websocket_target> websocket_targets;
+        std::shared_ptr<shared_state> state;
 
       public:
         listener( net::io_context &ioc, tcp::endpoint endpoint );
@@ -39,7 +40,7 @@ namespace msserver
             http_targets.emplace_back( http::verb::post, ep, handler );
         }
 
-        constexpr inline void websocket( const std::string ep, const websocket_request_handler &handler ) noexcept
+        constexpr inline void websocket( const std::string ep, const raw_websocket_request_handler &handler ) noexcept
         {
             websocket_targets.emplace_back( ep, handler );
         }
@@ -52,7 +53,6 @@ namespace msserver
       private:
         void do_accept() noexcept;
         void on_accept( beast::error_code ec, tcp::socket socket ) noexcept;
-        void on_read( tcp::socket &socket, const http::request<http::string_body> &req, beast::error_code ec, size_t bytes_transferred );
     };
 
 } // namespace msserver

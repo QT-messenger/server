@@ -10,6 +10,7 @@
 #    include <boost/beast/websocket/stream.hpp>
 #    include <def.hxx>
 #    include <websocket_target.hxx>
+#    include <shared_state.hxx>
 #    include <memory>
 
 namespace msserver
@@ -18,6 +19,7 @@ namespace msserver
     using tcp           = boost::asio::ip::tcp;
     namespace beast     = boost::beast;
     namespace websocket = beast::websocket;
+    namespace net       = boost::asio;
 
     class websocket_session : public std::enable_shared_from_this<websocket_session>
     {
@@ -27,13 +29,21 @@ namespace msserver
         std::string endp;
         std::vector<websocket_target> targets;
         http::request<http::string_body> req;
+        std::shared_ptr<shared_state> state;
+        uint64_t user_id = 1;
 
       public:
-        inline websocket_session( tcp::socket &&socket, const std::string &endp, const std::vector<websocket_target> &targets ) :
+        inline websocket_session( tcp::socket &&socket, const std::string &endp, const std::vector<websocket_target> &targets, std::shared_ptr<shared_state> state ) :
             wsstream( std::move( socket ) ),
             endp( endp ),
-            targets( targets )
+            targets( targets ),
+            state( state )
         {
+        }
+
+        inline ~websocket_session()
+        {
+            state->leave( *this );
         }
 
         inline void run( http::request<http::string_body> req ) noexcept
@@ -46,12 +56,24 @@ namespace msserver
             wsstream.async_accept( req, beast::bind_front_handler( &websocket_session::on_accept, shared_from_this() ) );
         }
 
+        inline size_t send( const std::string &message ) noexcept
+        {
+            beast::error_code ec;
+            return wsstream.write( net::buffer( message ), ec );
+        }
+
+        constexpr inline uint64_t get_id() const noexcept
+        {
+            return user_id;
+        }
+
       private:
         void on_accept( beast::error_code ec ) noexcept;
         void do_read() noexcept;
         void on_read( beast::error_code ec, std::size_t bytes_transferred ) noexcept;
         void handle_request();
-        void on_write( beast::error_code ec, std::size_t bytes_transferred );
+        void on_write( beast::error_code ec );
+        websocket_session *find_session( uint64_t id ) noexcept;
     };
 
 } // namespace msserver

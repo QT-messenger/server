@@ -10,7 +10,7 @@ namespace msserver
     struct websocket_target
     {
         std::string ep;
-        websocket_request_handler handler;
+        raw_websocket_request_handler handler;
     };
 
 } // namespace msserver

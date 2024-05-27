@@ -7,7 +7,19 @@
 
 namespace msserver
 {
-    namespace net = boost::asio;
+    websocket_session *websocket_session::find_session( uint64_t id ) noexcept
+    {
+        auto sessions = state->get_sessions();
+        auto session  = std::find_if( sessions.begin(), sessions.end(), [ id ]( websocket_session *session )
+                                      { return session->user_id == id; } );
+
+        if ( session == sessions.end() )
+        {
+            return nullptr;
+        }
+
+        return *session;
+    }
 
     void websocket_session::on_accept( beast::error_code ec ) noexcept
     {
@@ -28,6 +40,7 @@ namespace msserver
     {
         if ( ec == websocket::error::closed )
         {
+            fail( ec, "closed" );
             return;
         }
 
@@ -49,20 +62,33 @@ namespace msserver
 
         if ( target_ != targets.end() )
         {
-            target_->handler( net::buffer_cast<const char *>( buffer.data() ), response );
-            wsstream.async_write( net::buffer( response ), beast::bind_front_handler( &websocket_session::on_write,
-                                                                                      shared_from_this() ) );
+            auto result = target_->handler( net::buffer_cast<const char *>( buffer.data() ), response, state, shared_from_this() );
+
+            if ( result.ws_error == websocket_error::ok )
+            {
+                user_id = result.user_id;
+
+                auto session = find_session( user_id );
+
+                if ( session == nullptr )
+                {
+                    state->join( *this );
+                }
+            }
         }
+
+        beast::error_code ec;
+        on_write( ec );
     }
 
-    void websocket_session::on_write( beast::error_code ec, std::size_t bytes_transferred )
+    void websocket_session::on_write( beast::error_code ec )
     {
         if ( ec )
         {
-            fail( ec, "Write websocket" );
+            fail( ec, "Write" );
         }
 
-        buffer.consume( buffer.size() );
+        buffer = beast::flat_buffer();
 
         do_read();
     }

@@ -1,4 +1,5 @@
 #pragma once
+#include "boost/beast/core/bind_handler.hpp"
 #ifndef HTTP_SESSION_HXX
 #    define HTTP_SESSION_HXX
 
@@ -32,12 +33,14 @@ namespace msserver
         std::vector<websocket_target> websocket_targets;
         boost::optional<http::request_parser<http::string_body>>
             parser;
+        std::shared_ptr<shared_state> state;
 
       public:
-        inline http_session( tcp::socket &sock, const std::vector<http_target> &http_targets, const std::vector<websocket_target> &websocket_targets ) :
+        inline http_session( tcp::socket &sock, const std::vector<http_target> &http_targets, const std::vector<websocket_target> &websocket_targets, std::shared_ptr<shared_state> state ) :
             stream( std::move( sock ) ),
             http_targets( http_targets ),
-            websocket_targets( websocket_targets )
+            websocket_targets( websocket_targets ),
+            state( state )
         {
         }
 
@@ -55,6 +58,8 @@ namespace msserver
         void do_close();
 
         http::response<http::string_body> e404() const noexcept;
+
+        void handle_connect( const http::request<http::string_body> &req );
     };
 
 } // namespace msserver

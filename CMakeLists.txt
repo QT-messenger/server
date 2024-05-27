@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 
 include_directories(include/)
 
-find_package(Boost REQUIRED)
+find_package(Boost REQUIRED COMPONENTS json)
 find_package(OpenSSL REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 include_directories(src/)
@@ -18,6 +18,7 @@ add_executable(${PROJECT_NAME}
     src/http_session.cxx
     src/listener.cxx
     src/websocket_session.cxx
+    src/websocket_handlers.cxx
 )
 target_compile_definitions(${PROJECT_NAME} PUBLIC THREADS_COUNT=${SERVER_THREADS_COUNT})
 

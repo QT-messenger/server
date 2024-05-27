@@ -36,7 +36,7 @@ namespace msserver
 
         if ( websocket::is_upgrade( req ) )
         {
-            std::make_shared<websocket_session>( stream.release_socket(), std::string( req.target() ), websocket_targets )->run( parser->release() );
+            std::make_shared<websocket_session>( stream.release_socket(), std::string( req.target() ), websocket_targets, state )->run( parser->release() );
             return;
         }
 
@@ -48,6 +48,12 @@ namespace msserver
         auto self          = shared_from_this();
         http::verb method  = req.method();
         std::string target = std::string( req.target() );
+
+        if ( target == "/connect" )
+        {
+            handle_connect( req );
+            return;
+        }
 
         http::response<http::string_body> response;
 
@@ -81,5 +87,10 @@ namespace msserver
         response.set( http::field::content_type, "text/plain" );
 
         return response;
+    }
+
+    void http_session::handle_connect( const http::request<http::string_body> &req )
+    {
+        std::make_shared<websocket_session>( stream.release_socket(), std::string( req.target() ), websocket_targets, state )->run( parser->release() );
     }
 } // namespace msserver
