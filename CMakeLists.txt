@@ -10,7 +10,7 @@ include_directories(include/)
 
 find_package(Boost REQUIRED COMPONENTS json)
 find_package(OpenSSL REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
+
 include_directories(src/)
 
 add_executable(${PROJECT_NAME}
@@ -22,5 +22,5 @@ add_executable(${PROJECT_NAME}
 )
 target_compile_definitions(${PROJECT_NAME} PUBLIC THREADS_COUNT=${SERVER_THREADS_COUNT})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE Boost::json)
 target_link_libraries(${PROJECT_NAME} PRIVATE OpenSSL::SSL)

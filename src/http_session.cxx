@@ -16,8 +16,6 @@ namespace msserver
     {
         parser.emplace();
 
-        parser->body_limit( 10000 );
-
         stream.expires_after( std::chrono::seconds( 30 ) );
 
         http::async_read(

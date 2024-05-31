@@ -14,50 +14,6 @@
 
 using namespace msserver;
 
-// Only for test
-uint64_t authentificate_user()
-{
-    return 1;
-}
-
-websocket_session *find_session( std::shared_ptr<shared_state> state, uint64_t id ) noexcept
-{
-    auto sessions = state->get_sessions();
-    auto session  = std::find_if( sessions.begin(), sessions.end(), [ id ]( websocket_session *session )
-                                  { return session->get_id() == id; } );
-
-    if ( session == sessions.end() )
-    {
-        return nullptr;
-    }
-
-    return *session;
-}
-
-// websocket_handler_result test_handle( const std::string &str, std::string &req, std::shared_ptr<shared_state> state, std::shared_ptr<msserver::websocket_session> self )
-// {
-//     if ( str == "connect" )
-//     {
-//         auto id = handle_connect( str, req );
-//         self->send( "ok" );
-//         return { id, msserver::websocket_error::ok };
-//     }
-//     else
-//     {
-//         int64_t thisid = authentificate_user();
-
-//         auto id = find_session( state, 1 );
-//         if ( id != nullptr )
-//         {
-//             id->send( "Your id is: " + std::to_string( id->get_id() ) );
-//             return { thisid, websocket_error::ok };
-//         }
-
-//         self->send( "not authentified" );
-//         return { -1, websocket_error::not_authorized };
-//     }
-// }
-
 int main()
 {
     net::io_context ioc( THREADS_COUNT );
@@ -75,7 +31,7 @@ int main()
 
     std::vector<std::thread> v;
     v.reserve( THREADS_COUNT - 1 );
-    for ( auto i = THREADS_COUNT - 1; i > 0; --i )
+    for ( size_t i = THREADS_COUNT - 1; i > 0; --i )
         v.emplace_back( [ &ioc ]
                         { ioc.run(); } );
     ioc.run();
