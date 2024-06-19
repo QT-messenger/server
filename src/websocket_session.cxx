@@ -39,11 +39,11 @@ namespace msserver
 
     void websocket_session::on_read( beast::error_code ec, std::size_t bytes_transferred ) noexcept
     {
-        if ( ec == websocket::error::closed )
-        {
-            fail( ec, "closed" );
-            return;
-        }
+        // if ( ec == websocket::error::closed )
+        // {
+        //     fail( ec, "closed" );
+        //     return;
+        // }
 
         if ( ec )
         {
