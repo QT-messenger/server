@@ -29,10 +29,9 @@ namespace msserver
       private:
         beast::tcp_stream stream;
         beast::flat_buffer buffer;
-        const std::vector<http_target> http_targets;
-        std::vector<websocket_target> websocket_targets;
-        boost::optional<http::request_parser<http::string_body>>
-            parser;
+        const std::vector<http_target> &http_targets;
+        const std::vector<websocket_target> &websocket_targets;
+        boost::optional<http::request_parser<http::string_body>> parser;
         std::shared_ptr<shared_state> state;
 
       public:

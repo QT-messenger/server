@@ -21,54 +21,52 @@
 #define QUOTE( y )  #y
 #define STRING( x ) QUOTE( x )
 
-using namespace msserver;
-
 int main()
 {
-    pqxx::connection c( "port=1605 dbname=postgres user=" STRING( SERVER_DB_USERNAME ) " password=" STRING( SERVER_DB_PASSWORD ) );
+    // pqxx::connection c( "port=1605 dbname=postgres user=" STRING( SERVER_DB_USERNAME ) " password=" STRING( SERVER_DB_PASSWORD ) );
 
-    {
-        pqxx::work txn( c );
+    // {
+    //     pqxx::work txn( c );
 
-        pqxx::result r = txn.exec(
-            "create table if not exists employee(id serial primary key, name text, salary integer)" );
+    //     pqxx::result r = txn.exec(
+    //         "create table if not exists employee(id serial primary key, name text, salary integer)" );
 
-        txn.commit();
-    }
+    //     txn.commit();
+    // }
 
-    c.prepare( "insert_employee", "insert into employee(name, salary) values($1, $2)" );
+    // c.prepare( "insert_employee", "insert into employee(name, salary) values($1, $2)" );
 
-    auto start = std::chrono::high_resolution_clock::now();
+    // auto start = std::chrono::high_resolution_clock::now();
 
-    pqxx::work txn( c );
+    // pqxx::work txn( c );
 
-    txn.exec_prepared0( "insert_employee", "Warren", 12345 );
+    // txn.exec_prepared0( "insert_employee", "Warren", 12345 );
 
-    pqxx::result r = txn.exec(
-        "SELECT id "
-        "FROM Employee "
-        "WHERE name =" +
-        txn.quote( "Warren" ) + " order by id desc limit 1" );
+    // pqxx::result r = txn.exec(
+    //     "SELECT id "
+    //     "FROM Employee "
+    //     "WHERE name =" +
+    //     txn.quote( "Warren" ) + " order by id desc limit 1" );
 
-    int employee_id = r[ 0 ][ 0 ].as<int>();
+    // int employee_id = r[ 0 ][ 0 ].as<int>();
 
-    txn.exec(
-        "UPDATE EMPLOYEE "
-        "SET salary = salary + 1 "
-        "WHERE id = " +
-        txn.quote( employee_id ) );
+    // txn.exec(
+    //     "UPDATE EMPLOYEE "
+    //     "SET salary = salary + 1 "
+    //     "WHERE id = " +
+    //     txn.quote( employee_id ) );
 
-    txn.commit();
-    net::io_context ioc( THREADS_COUNT );
-    auto ls = std::make_shared<listener>( ioc, tcp::endpoint( boost::asio::ip::make_address( HTTP_TARGET_HOST ), HTTP_TARGET_PORT ) );
+    // txn.commit();
+    msserver::net::io_context ioc( THREADS_COUNT );
+    auto ls = std::make_shared<msserver::listener>( ioc, msserver::tcp::endpoint( boost::asio::ip::make_address( HTTP_TARGET_HOST ), HTTP_TARGET_PORT ) );
 
     ls->get( "/hw", []( http::request<http::string_body>, http::response<http::string_body> &response )
              { response.body() = "Hello world!"; response.set(http::field::content_type, "text/plain"); } );
 
-    ls->websocket( "/", handle );
+    ls->websocket( "/", msserver::handle );
     ls->run();
 
-    net::signal_set signals( ioc, SIGINT, SIGTERM );
+    msserver::net::signal_set signals( ioc, SIGINT, SIGTERM );
     signals.async_wait( [ & ]( beast::error_code const &, int )
                         { ioc.stop(); } );
 
