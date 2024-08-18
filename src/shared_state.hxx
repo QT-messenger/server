@@ -1,7 +1,8 @@
 #pragma once
 #ifndef SHARED_STATE_HXX
 #    define SHARED_STATE_HXX
-#    include <unordered_set>
+#    include <deque>
+#    include <vector>
 
 namespace msserver
 {
@@ -9,25 +10,16 @@ namespace msserver
 
     class shared_state
     {
-        std::unordered_set<websocket_session *> sessions;
+        std::vector<websocket_session *> sessions;
+        uint64_t _mId { 0 };
+        std::deque<uint64_t> _freeIds;
 
       public:
+        uint64_t getFreeId();
         explicit shared_state() = default;
-
-        constexpr inline void join( websocket_session &session )
-        {
-            sessions.insert( &session );
-        }
-
-        constexpr inline void leave( websocket_session &session )
-        {
-            sessions.erase( &session );
-        }
-
-        constexpr inline const std::unordered_set<websocket_session *> &get_sessions() const noexcept
-        {
-            return sessions;
-        }
+        void join( websocket_session &session );
+        void leave( websocket_session &session );
+        const std::vector<websocket_session *> &get_sessions() const noexcept;
     };
 } // namespace msserver
 

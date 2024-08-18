@@ -27,18 +27,20 @@ namespace msserver
         websocket::stream<tcp::socket> wsstream;
         beast::flat_buffer buffer;
         std::string endp;
-        std::vector<websocket_target> targets;
+        const std::vector<websocket_target> &targets;
         http::request<http::string_body> req;
-        std::shared_ptr<shared_state> state;
-        uint64_t user_id = 1;
+        uint64_t id { 0 };
 
       public:
+        friend shared_state;
+        std::shared_ptr<shared_state> state;
         inline websocket_session( tcp::socket &&socket, const std::string &endp, const std::vector<websocket_target> &targets, std::shared_ptr<shared_state> state ) :
             wsstream( std::move( socket ) ),
             endp( endp ),
             targets( targets ),
             state( state )
         {
+            state->join( *this );
         }
 
         inline ~websocket_session()
@@ -51,7 +53,7 @@ namespace msserver
             wsstream.set_option(
                 websocket::stream_base::decorator( []( websocket::response_type &res )
                                                    { res.set( http::field::server,
-                                                              std::string( BOOST_BEAST_VERSION_STRING ) + " ms-server" ); } ) );
+                                                              ( BOOST_BEAST_VERSION_STRING " ms-server" ) ); } ) );
 
             wsstream.async_accept( req, beast::bind_front_handler( &websocket_session::on_accept, shared_from_this() ) );
         }
@@ -64,7 +66,7 @@ namespace msserver
 
         constexpr inline uint64_t get_id() const noexcept
         {
-            return user_id;
+            return id;
         }
 
       private:

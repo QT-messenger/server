@@ -8,19 +8,13 @@
 
 namespace msserver
 {
-    websocket_session *websocket_session::find_session( uint64_t id ) noexcept
-    {
-        auto sessions = state->get_sessions();
-        auto session  = std::find_if( sessions.begin(), sessions.end(), [ id ]( websocket_session *session )
-                                      { return session->user_id == id; } );
-
-        if ( session == sessions.end() )
-        {
-            return nullptr;
-        }
-
-        return *session;
-    }
+    // websocket_session *websocket_session::find_session( uint64_t id ) noexcept
+    // {
+    //     auto sessions = state->get_sessions();
+    //     if ( id >= sessions.size() )
+    //         return nullptr;
+    //     return sessions[ id ];
+    // }
 
     void websocket_session::on_accept( beast::error_code ec ) noexcept
     {
@@ -65,17 +59,13 @@ namespace msserver
         {
             auto result = target_->handler( beast::buffers_to_string( buffer.data() ), response, state, shared_from_this() );
 
-            if ( result.ws_error == websocket_error::ok )
-            {
-                user_id = result.user_id;
-
-                auto session = find_session( user_id );
-
-                if ( session == nullptr )
-                {
-                    state->join( *this );
-                }
-            }
+            // if ( result == websocket_error::Ok )
+            // {
+            //     auto session = find_session( id );
+            //     if ( session == nullptr )
+            //     {
+            //     }
+            // }
         }
 
         beast::error_code ec;

@@ -1,7 +1,6 @@
 #pragma once
 #ifndef WEBSOCKET_ERROR_HXX
 #    define WEBSOCKET_ERROR_HXX
-#    include <string>
 
 namespace msserver
 {
@@ -41,11 +40,15 @@ namespace msserver
     // const inline websocket_err::ok             = { 0, "ok" };
     // const inline websocket_err::not_authorized = { 1, "not authorized" };
 
-    enum class websocket_error
+    enum struct websocket_error
     {
-        ok             = 0,
-        not_authorized = 1,
-        wrong_request  = 2,
+        Ok = 0,
+        ServerError,
+        WrongData,
+        TooManyTries,
+        AuthTimeOut,
+        WrongAuthData,
+        WrongAuthLogin,
     };
 } // namespace msserver
 #endif

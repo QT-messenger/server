@@ -5,16 +5,16 @@
 #    include <boost/json.hpp>
 #    include <memory>
 #    include <shared_state.hxx>
-#    include <websocket_handler_result.hxx>
+#    include <websocket_error.hxx>
 
 namespace msserver
 {
     namespace json = boost::json;
 
     json::object validate_request( const json::value &value );
-    websocket_handler_result handle( const std::string &str, std::string &req, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self );
-    websocket_handler_result handle_connect( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept;
-    websocket_handler_result handle_sendmessage( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept;
+    websocket_error handle( const std::string &str, std::string &req, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self );
+    websocket_error handle_connect( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept;
+    websocket_error handle_sendmessage( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept;
 
     inline json::value parse_request_string_unchecked( const std::string &req )
     {

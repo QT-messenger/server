@@ -1,30 +1,47 @@
 #include <websocket_session.hxx>
 #include <def.hxx>
 #include <websocket_handlers.hxx>
+#include <database.hxx>
 
 namespace msserver
 {
     static std::hash<std::string> hasher;
-    static int64_t users_count = 0;
-
-    int64_t authentificate_user( json::object &req )
+    websocket_error authentificate_user( json::object &req )
     {
-        if ( !req.contains( "user" ) && !req[ "user" ].is_object() )
+        if ( !req[ "user" ].is_object() || !req[ "user" ].as_object().contains( "login" ) )
         {
-            return -1;
+            return websocket_error::WrongData;
         }
-
-        return req[ "user" ].as_object()[ "id" ].as_int64();
+        pqxx::work txn( msserver::database::connection );
+        try
+        {
+            auto exist { txn.exec( std::format( "SELECT 1 FROM users WHERE login = {};", req[ "user" ].as_object()[ "login" ].as_string().data() ) ) };
+        }
+        catch ( pqxx::sql_error &e )
+        {
+            return websocket_error::WrongAuthLogin;
+        }
+        if ( txn.exec( std::format( "SELECT password FROM users WHERE login = {};", req[ "user" ].as_object()[ "login" ].as_string().data() ) )[ 0 ][ 0 ].get<std::string>() == req[ "user" ].as_object()[ "password" ].as_string() )
+            return websocket_error::Ok;
+        else
+            return websocket_error::WrongAuthData;
     }
 
-    int64_t get_send_user( json::object &req )
+    bool is_user_exists( json::object &req )
     {
-        if ( !req.contains( "data" ) && !req[ "data" ].as_object().contains( "message" ) && !req[ "data" ].as_object()[ "message" ].as_object().contains( "id" ) )
+        if ( !req.contains( "data" ) && !req[ "data" ].as_object().contains( "message" ) && !req[ "data" ].as_object()[ "message" ].as_object().contains( "login" ) )
         {
-            return -1;
+            return 0;
         }
-
-        return req[ "data" ].as_object()[ "message" ].as_object()[ "id" ].as_int64();
+        else
+        {
+            pqxx::work txn( msserver::database::connection );
+            auto res { txn.exec( std::format( "SELECT login FROM users WHERE login = {};", req[ "login" ].as_string().data() ) ) };
+            if ( res[ 0 ][ 0 ].get<std::string>() == req[ "data" ].as_object()[ "message" ].as_object()[ "login" ].as_string() )
+                return 1;
+            else
+                return 0;
+        }
     }
 
     static inline std::unordered_map<size_t, parsed_websocket_request_handler> get_handlers()
@@ -52,7 +69,7 @@ namespace msserver
         return obj;
     }
 
-    websocket_handler_result handle( const std::string &str, std::string &req, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self )
+    websocket_error handle( const std::string &str, std::string &req, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self )
     {
         json::object request = parse_request_string( str );
 
@@ -62,58 +79,56 @@ namespace msserver
         }
         catch ( std::out_of_range )
         {
-            return { -1, websocket_error::wrong_request };
+            return websocket_error::ServerError;
         }
     }
 
-    websocket_handler_result handle_connect( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
+    websocket_error handle_connect( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
     {
-        auto id = authentificate_user( req );
-
-        if ( id < 0 )
+        auto res { authentificate_user( req ) };
+        json::object answ;
+        answ[ "answer" ] = static_cast<int64_t>( res );
+        if ( res != websocket_error::Ok )
         {
-            self->send( "fail: couldn't autherntificate user" );
-            return {
-                id, websocket_error::not_authorized };
+            self->send( json::serialize( answ ) );
+            return res;
         }
-
-        self->send( "ok" );
-        return { id, msserver::websocket_error::ok };
+        self->send( json::serialize( answ ) );
+        return res;
     }
 
-    websocket_handler_result handle_sendmessage( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
+    websocket_error handle_sendmessage( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
     {
-        auto id = authentificate_user( req );
-
-        if ( id < 0 )
+        auto res = authentificate_user( req );
+        json::object answ;
+        if ( res != websocket_error::Ok )
         {
-            self->send( "fail: couldn't autherntificate user" );
-            return {
-                id, websocket_error::not_authorized };
+            answ[ "answer" ] = static_cast<int64_t>( res );
+            self->send( json::serialize( answ ) );
+            return res;
         }
 
-        auto user = get_send_user( req );
+        auto user = is_user_exists( req );
 
-        if ( id < 0 )
+        if ( !user )
         {
-            self->send( "wrong send user data" );
-            return {
-                id, websocket_error::not_authorized };
+            answ[ "answer" ] = static_cast<int64_t>( websocket_error::WrongData );
+            self->send( json::serialize( answ ) );
+            return websocket_error::WrongData;
         }
 
         std::string data = std::string( req[ "data" ].as_object()[ "message" ].as_object()[ "data" ].as_string() );
-
-        auto sessions = state->get_sessions();
-
-        auto usession = std::find_if( sessions.begin(), sessions.end(), [ user ]( const websocket_session *session )
-                                      { return session->get_id() == user; } );
+        auto sessions    = state->get_sessions();
+        auto usession    = std::find_if( sessions.begin(), sessions.end(), [ user ]( const websocket_session *session )
+                                         { return session->get_id() == user; } );
 
         if ( usession != sessions.end() )
         {
             ( *usession )->send( data );
-            self->send( "ok" );
+            answ[ "answer" ] = static_cast<int64_t>( websocket_error::Ok );
+            self->send( json::serialize( answ ) );
         }
 
-        return { id, websocket_error::ok };
+        return websocket_error::Ok;
     }
 } // namespace msserver

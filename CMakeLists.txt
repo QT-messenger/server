@@ -15,8 +15,14 @@ find_package(libpqxx REQUIRED)
 include_directories(src/)
 
 add_executable(
-  ${PROJECT_NAME} src/main.cxx src/http_session.cxx src/listener.cxx
-                  src/websocket_session.cxx src/websocket_handlers.cxx)
+  ${PROJECT_NAME}
+  src/main.cxx
+  src/http_session.cxx
+  src/listener.cxx
+  src/websocket_session.cxx
+  src/websocket_handlers.cxx
+  src/database.cxx
+  src/shared_state.cxx)
 
 if("X$ENV{SERVER_DB_USERNAME}" STREQUAL "X")
   message(
