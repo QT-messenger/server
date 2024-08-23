@@ -15,13 +15,16 @@ namespace msserver
         pqxx::work txn( msserver::database::connection );
         try
         {
-            auto exist { txn.exec( std::format( "SELECT 1 FROM users WHERE login = {};", req[ "user" ].as_object()[ "login" ].as_string().data() ) ) };
+            auto exist { txn.exec( std::format( "SELECT 1 FROM users WHERE login = '{}';", req[ "user" ].as_object()[ "login" ].as_string().data() ) ) };
+            if ( exist.empty() )
+                return websocket_error::WrongAuthLogin;
         }
         catch ( pqxx::sql_error &e )
         {
+            std::cout << e.what() << '\n';
             return websocket_error::WrongAuthLogin;
         }
-        if ( txn.exec( std::format( "SELECT password FROM users WHERE login = {};", req[ "user" ].as_object()[ "login" ].as_string().data() ) )[ 0 ][ 0 ].get<std::string>() == req[ "user" ].as_object()[ "password" ].as_string() )
+        if ( txn.exec( std::format( "SELECT password FROM users WHERE login = '{}';", req[ "user" ].as_object()[ "login" ].as_string().data() ) )[ 0 ][ 0 ].get<std::string>() == req[ "user" ].as_object()[ "password" ].as_string() )
             return websocket_error::Ok;
         else
             return websocket_error::WrongAuthData;
@@ -35,18 +38,28 @@ namespace msserver
         }
         else
         {
-            pqxx::work txn( msserver::database::connection );
-            auto res { txn.exec( std::format( "SELECT login FROM users WHERE login = {};", req[ "login" ].as_string().data() ) ) };
-            if ( res[ 0 ][ 0 ].get<std::string>() == req[ "data" ].as_object()[ "message" ].as_object()[ "login" ].as_string() )
-                return 1;
-            else
+            try
+            {
+                pqxx::work txn( msserver::database::connection );
+                auto res { txn.exec( std::format( "SELECT login FROM users WHERE login = '{}';", req[ "login" ].as_string().data() ) ) };
+                if ( res[ 0 ][ 0 ].get<std::string>() == req[ "data" ].as_object()[ "message" ].as_object()[ "login" ].as_string() )
+                    return 1;
+                else
+                    return 0;
+            }
+            catch ( pqxx::sql_error &e )
+            {
+                std::cout << e.what();
                 return 0;
+            }
         }
     }
 
     static inline std::unordered_map<size_t, parsed_websocket_request_handler> get_handlers()
     {
         return {
+            { hasher( "register" ),
+              handle_register },
             { hasher( "connect" ),
               handle_connect },
             { hasher( "sendmessage" ), handle_sendmessage } };
@@ -81,6 +94,47 @@ namespace msserver
         {
             return websocket_error::ServerError;
         }
+    }
+
+    websocket_error handle_register( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
+    {
+        auto res { authentificate_user( req ) };
+        json::object answ;
+        // answ[ "answer" ] = static_cast<int64_t>( res );
+        if ( res == websocket_error::WrongAuthLogin )
+        {
+            pqxx::work txn( msserver::database::connection );
+            try
+            {
+                auto exist { txn.exec( std::format( "INSERT INTO users (login, password) VALUES ('{}', '{}');", req[ "user" ].as_object()[ "login" ].as_string().data(), req[ "user" ].as_object()[ "password" ].as_string().data() ) ) };
+                txn.commit();
+            }
+            catch ( pqxx::sql_error &e )
+            {
+                std::cout << e.what() << '\n';
+                answ[ "answer" ] = static_cast<int64_t>( websocket_error::ServerError );
+                self->send( json::serialize( answ ) );
+                txn.abort();
+                return websocket_error::ServerError;
+            }
+            answ[ "answer" ] = static_cast<int64_t>( websocket_error::Ok );
+            self->send( json::serialize( answ ) );
+        }
+        else if ( res == websocket_error::WrongData )
+        {
+            answ[ "answer" ] = static_cast<int64_t>( res );
+            self->send( json::serialize( answ ) );
+            return res;
+        }
+        else if ( res == websocket_error::Ok || res == websocket_error::WrongAuthData )
+        {
+            answ[ "answer" ] = static_cast<int64_t>( websocket_error::WrongAuthLogin );
+            self->send( json::serialize( answ ) );
+            return websocket_error::WrongAuthLogin;
+        }
+        answ[ "answer" ] = static_cast<int64_t>( res );
+        self->send( json::serialize( answ ) );
+        return res;
     }
 
     websocket_error handle_connect( json::object &req, std::string &resp, std::shared_ptr<shared_state> state, std::shared_ptr<websocket_session> self ) noexcept
